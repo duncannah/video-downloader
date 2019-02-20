@@ -136,6 +136,8 @@ router.get("/", (req, res) => {
 				"-o",
 				`${path.join(__dirname, "../videos/", uuid, "%(title)s.%(ext)s")}`,
 				"--newline",
+				"--postprocessor-args",
+				"'-strict -2'",
 				"--",
 				req.body.url
 			],
