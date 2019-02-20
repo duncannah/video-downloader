@@ -1,11 +1,13 @@
 # Duncan's video downloader
 
-## Running 
+## Running
+
 ```
-npm run
+npm start
 ```
 
 ## Debugging
+
 ```
 DEBUG=video-downloader:* npm start
 ```
