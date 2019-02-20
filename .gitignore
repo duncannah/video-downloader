@@ -67,3 +67,5 @@ typings/
 /public/stylesheets/*.css.map
 
 /tosend/
+
+/bin/youtube-dl

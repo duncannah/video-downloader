@@ -1,35 +1,33 @@
-const YTDL = "python3";
-const YTDL_ARG = ["/usr/local/bin/youtube-dl", "--no-warnings", "--playlist-end", "1"];
-const YTDL_OPT = { maxBuffer: 1000 * 1000 * 2 };
-
-const TIME_LIMIT = 1000 * 60 * 60 * 2;
-
 const fs = require("fs-extra");
 const path = require("path");
 const express = require("express");
+
+const YTDL = "python3";
+const YTDL_ARG = [path.join(__dirname, "../bin/youtube-dl"), "--no-warnings"];
+const YTDL_OPT = { maxBuffer: 1000 * 1000 * 2 };
+
+const TIME_LIMIT = 1000 * 60 * 60 * 2;
 
 const router = express.Router();
 
 const { execFile, spawn } = require("promisify-child-process");
 
-function timeStampToMili(t) {
-	return new Date("1/1/1970 " + t).getTime() + 3600000;
-}
+const timeStampToMili = (t) => new Date("1/1/1970 " + t).getTime() + 3600000;
 
-fs.ensureDirSync(path.join(__dirname, "../videos"));
+const downloadYTDL = () =>
+	new Promise((resv) => {
+		const request = require("request");
 
-let youtubeDLVersion = "ERROR";
-
-execFile(YTDL, [...YTDL_ARG, "--version"], YTDL_OPT).then((out) => {
-	youtubeDLVersion = out.stdout.toString().split("\n")[0];
-});
-
-let youtubeDLExtractors = [];
-execFile(YTDL, [...YTDL_ARG, "--list-extractors"], YTDL_OPT).then((out) => {
-	youtubeDLExtractors = out.stdout.toString().split("\n");
-});
+		request("https://yt-dl.org/downloads/latest/youtube-dl")
+			.pipe(fs.createWriteStream(path.join(__dirname, "../bin/youtube-dl")))
+			.on("finish", () => {
+				resv();
+			});
+	});
 
 let videoList = {};
+let youtubeDLVersion = "?";
+let youtubeDLExtractors = [];
 
 router.get("/", (req, res) => {
 	res.render("index", {
@@ -42,69 +40,96 @@ router.get("/", (req, res) => {
 	});
 });
 
-router.post("/getInfo", (req, res) => {
-	if (
-		!req.body.url.match(
-			/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/
-		)
-	)
-		return res.json({ success: false, error: "URL not valid" });
+(async () => {
+	if (!fs.existsSync(path.join(__dirname, "../bin/youtube-dl"))) await downloadYTDL();
 
-	execFile(YTDL, [...YTDL_ARG, "--dump-json", "--", req.body.url], YTDL_OPT)
-		.then((out) => {
-			res.json({ success: true, payload: JSON.parse(out.stdout.toString().split("\n")[0]) });
-		})
-		.catch((err) => {
+	fs.ensureDirSync(path.join(__dirname, "../videos"));
+
+	videoList = {};
+
+	youtubeDLVersion = (await execFile(YTDL, [...YTDL_ARG, "--version"], YTDL_OPT)).stdout.toString().split("\n")[0];
+
+	youtubeDLExtractors = (await execFile(YTDL, [...YTDL_ARG, "--list-extractors"], YTDL_OPT)).stdout
+		.toString()
+		.split("\n");
+
+	router.post("/getInfo", async (req, res) => {
+		if (
+			!req.body.url.match(
+				/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/
+			)
+		)
+			return res.json({ success: false, error: "URL not valid" });
+
+		try {
+			res.json({
+				success: true,
+				payload: JSON.parse(
+					(await execFile(
+						YTDL,
+						[...YTDL_ARG, "--playlist-end", "1", "--dump-json", "--", req.body.url],
+						YTDL_OPT
+					)).stdout
+						.toString()
+						.split("\n")[0]
+				)
+			});
+		} catch (err) {
 			console.error(err);
 
 			res.json({ success: false, error: "An error has occured while retrieving info" });
-		});
-});
+		}
+	});
 
-router.post("/startDownload", (req, res) => {
-	if (
-		!req.body.url.match(
-			/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/
+	router.post("/startDownload", async (req, res) => {
+		if (
+			!req.body.url.match(
+				/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/
+			)
 		)
-	)
-		return res.json({ success: false, error: "URL not valid" });
+			return res.json({ success: false, error: "URL not valid" });
 
-	let args = ["--add-metadata"];
+		let args = ["--playlist-end", "1", "--add-metadata"];
 
-	if (["mp3", "m4a", "aac", "opus"].includes(req.body.out)) {
-		// music
-		if (req.body.how === "bestqc") args.push("-x", "--audio-format", req.body.out);
-		else if (req.body.how === "customfc") {
+		if (["mp3", "m4a", "aac", "opus"].includes(req.body.out)) {
+			// music
+			if (req.body.how === "bestqc") args.push("-x", "--audio-format", req.body.out);
+			else if (req.body.how === "customfc") {
+				if (!req.body.format) return res.json({ success: false, error: "No format selected" });
+				if (req.body.format instanceof Array)
+					return res.json({ success: false, error: "Only pick one format" });
+
+				args.push("-f", req.body.format, "--audio-format", req.body.out);
+			}
+		} else {
+			if (req.body.subtitle === "on") args.push("--embed-subs");
+
+			if (req.body.how === "bestqc") args.push("--recode-video", req.body.out);
+			else if (req.body.how === "customfc") {
+				if (!req.body.format) return res.json({ success: false, error: "No format selected" });
+				if (req.body.format instanceof Array) {
+					if (req.body.format.length > 2)
+						return res.json({
+							success: false,
+							error: "Please pick only one video and/or one audio format"
+						});
+
+					args.push("-f", req.body.format[0] + "+" + req.body.format[1], "--recode-video", req.body.out);
+				} else args.push("-f", req.body.format);
+			}
+		}
+
+		if (req.body.how === "customfs") {
 			if (!req.body.format) return res.json({ success: false, error: "No format selected" });
 			if (req.body.format instanceof Array) return res.json({ success: false, error: "Only pick one format" });
 
-			args.push("-f", req.body.format, "--audio-format", req.body.out);
+			args.push("-f", req.body.format);
 		}
-	} else {
-		if (req.body.subtitle === "on") args.push("--embed-subs");
 
-		if (req.body.how === "bestqc") args.push("--recode-video", req.body.out);
-		else if (req.body.how === "customfc") {
-			if (!req.body.format) return res.json({ success: false, error: "No format selected" });
-			if (req.body.format instanceof Array) {
-				if (req.body.format.length > 2)
-					return res.json({ success: false, error: "Please pick only one video and/or one audio format" });
+		const uuid = new Date().getTime().toString();
 
-				args.push("-f", req.body.format[0] + "+" + req.body.format[1], "--recode-video", req.body.out);
-			} else args.push("-f", req.body.format);
-		}
-	}
+		await fs.ensureDir(path.join(__dirname, "../videos/", uuid));
 
-	if (req.body.how === "customfs") {
-		if (!req.body.format) return res.json({ success: false, error: "No format selected" });
-		if (req.body.format instanceof Array) return res.json({ success: false, error: "Only pick one format" });
-
-		args.push("-f", req.body.format);
-	}
-
-	const uuid = new Date().getTime().toString();
-
-	fs.ensureDir(path.join(__dirname, "../videos/", uuid)).then(() => {
 		const video = spawn(
 			YTDL,
 			[
@@ -165,51 +190,52 @@ router.post("/startDownload", (req, res) => {
 
 		res.json({ success: true, payload: uuid });
 	});
-});
 
-router.get("/checkDownload/:id", (req, res) => {
-	if (!(req.params.id in videoList) || videoList[req.params.id].status === "failed")
-		return res.json({ success: false, error: "Download failed" });
+	router.get("/checkDownload/:id", (req, res) => {
+		if (!(req.params.id in videoList) || videoList[req.params.id].status === "failed")
+			return res.json({ success: false, error: "Download failed" });
 
-	if (videoList[req.params.id].status !== "done")
-		return res.json({
-			success: true,
-			payload: {
-				done: false,
-				status: videoList[req.params.id].status,
-				progress: videoList[req.params.id].progress
-			}
-		});
-	else return res.json({ success: true, payload: { done: true } });
-});
+		if (videoList[req.params.id].status !== "done")
+			return res.json({
+				success: true,
+				payload: {
+					done: false,
+					status: videoList[req.params.id].status,
+					progress: videoList[req.params.id].progress
+				}
+			});
+		else return res.json({ success: true, payload: { done: true } });
+	});
 
-router.get("/download/:id", (req, res) => {
-	if (!(req.params.id in videoList)) return res.send(404);
+	router.get("/download/:id", async (req, res) => {
+		if (!(req.params.id in videoList)) return res.send(404);
 
-	fs.pathExists(path.join(__dirname, "../videos/", req.params.id, "/", videoList[req.params.id].fileName))
-		.then(() => {
+		try {
+			await fs.pathExists(
+				path.join(__dirname, "../videos/", req.params.id, "/", videoList[req.params.id].fileName)
+			);
+
 			res.download(path.join(__dirname, "../videos/", req.params.id, "/", videoList[req.params.id].fileName));
-		})
-		.catch(() => {
-			return res.send(404);
-		});
-});
+		} catch (_) {
+			res.send(404);
+		}
+	});
 
-setInterval(() => {
-	fs.readdir(path.join(__dirname, "../videos/")).then((dirs) => {
+	setInterval(async () => {
+		let dirs = await fs.readdir(path.join(__dirname, "../videos/"));
 		for (const dir of dirs) {
 			if (!parseInt(dir)) continue;
 
 			if (parseInt(dir) < new Date().getTime() - TIME_LIMIT) fs.remove(path.join(__dirname, "../videos/", dir));
 		}
-	});
 
-	let newVideoList = {};
-	Object.keys(videoList).map((i) => {
-		if (i >= new Date().getTime() - TIME_LIMIT) newVideoList[i] = videoList[i];
-	});
+		let newVideoList = {};
+		Object.keys(videoList).map((i) => {
+			if (i >= new Date().getTime() - TIME_LIMIT) newVideoList[i] = videoList[i];
+		});
 
-	videoList = newVideoList;
-}, 1000 * 60); // minute
+		videoList = newVideoList;
+	}, 1000 * 60); // minute
+})();
 
 module.exports = router;
