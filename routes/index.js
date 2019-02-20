@@ -142,7 +142,9 @@ router.get("/", (req, res) => {
 			YTDL_OPT
 		);
 
-		video.catch(() => {
+		video.catch((err) => {
+			console.error(err);
+
 			videoList[uuid].status = "failed";
 		});
 
