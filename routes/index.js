@@ -104,18 +104,16 @@ router.get("/", (req, res) => {
 		} else {
 			if (req.body.subtitle === "on") args.push("--embed-subs");
 
-			if (req.body.how === "bestqc") args.push("--recode-video", req.body.out);
+			if (req.body.how === "bestqc") args.push("--merge-output-format", req.body.out);
 			else if (req.body.how === "customfc") {
 				if (!req.body.format) return res.json({ success: false, error: "No format selected" });
-				if (req.body.format instanceof Array) {
-					if (req.body.format.length > 2)
-						return res.json({
-							success: false,
-							error: "Please pick only one video and/or one audio format"
-						});
+				if (!req.body.format instanceof Array || req.body.format.length > 2)
+					return res.json({
+						success: false,
+						error: "Please pick only one video and one audio format"
+					});
 
-					args.push("-f", req.body.format[0] + "+" + req.body.format[1], "--recode-video", req.body.out);
-				} else args.push("-f", req.body.format);
+				args.push("-f", req.body.format[0] + "+" + req.body.format[1], "--merge-output-format", req.body.out);
 			}
 		}
 

@@ -302,8 +302,6 @@ class App extends React.Component {
 									value={this.state.selectedOutput}>
 									<option value="mp4">.mp4</option>
 									<option value="mkv">.mkv</option>
-									<option value="webm">.webm</option>
-									<option value="mov">.mov</option>
 									<option disabled>---</option>
 									<option value="mp3">.mp3</option>
 									<option value="m4a">.m4a</option>
