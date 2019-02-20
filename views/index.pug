@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+html(lang="en")
+	head
+		meta(charset="UTF-8")
+		meta(name="viewport", content="width=device-width, initial-scale=1.0")
+		meta(http-equiv="X-UA-Compatible", content="ie=edge")
+		meta(name="theme-color", content="#1F0B33")
+		link(rel="manifest", href="./manifest.json")
+		link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/normalize.css@8.0.1/normalize.css")
+		link(rel="stylesheet", href="./stylesheets/app.css")
+		title Duncan's video downloader
+	body
+		.top duncan's video downloader
+		#app
+			p loading...
+
+		script
+			| const youtubeDLVersion = !{JSON.stringify(youtubeDLVersion)};
+			| const youtubeDLExtractors = !{JSON.stringify(youtubeDLExtractors)};
+			| const videoList = !{JSON.stringify(videoList)};
+
+		if debugMode
+			script(src="https://cdnjs.cloudflare.com/ajax/libs/react/16.8.2/umd/react.development.js")
+			script(src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.8.2/umd/react-dom.development.js")
+		else
+			script(src="https://cdnjs.cloudflare.com/ajax/libs/react/16.8.2/umd/react.production.min.js")
+			script(src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/16.8.2/umd/react-dom.production.min.js")
+
+		script(src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.24.0/babel.min.js")
+		script(src="./javascripts/app.js", type="text/babel")

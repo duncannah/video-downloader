@@ -1,0 +1,195 @@
+* {
+	box-sizing: border-box;
+}
+
+body {
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Open Sans', 'Helvetica Neue', sans-serif;
+
+	text-align: center;
+
+	color: rgba(255, 255, 255, .5);
+	background: #0e021a;
+}
+
+hr {
+	height: 1px;
+	margin: 15px 0;
+
+	border: 0;
+	background: linear-gradient(to left, transparent, rgba(255, 255, 255, .25), transparent);
+}
+
+a, strong {
+	color: rgba(255, 255, 255, .75);
+}
+
+#loading {
+	position: fixed;
+	z-index: 1;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+
+	padding: calc(50vh - .5em) 0;
+
+	user-select: none;
+
+	color: #fff;
+	background: rgba(14, 2, 26, .5);
+}
+
+._it {
+	font-style: italic;
+}
+
+._small {
+	font-size: 75%;
+}
+
+._clearfix {
+	clear: both;
+}
+
+.top {
+	font-weight: bold;
+
+	padding: 20px;
+
+	background: #1f0b33;
+	box-shadow: 0 0 5px rgba(0, 0, 0, .5);
+}
+
+.input {
+	margin: 20px 0;
+}
+
+.input input, .download, button {
+	font-family: inherit;
+	font-size: 1.5em;
+
+	display: block;
+
+	width: 100%;
+	max-width: 600px;
+	margin: 10px auto;
+	padding: 5px 10px;
+
+	color: inherit;
+	border: 0;
+	border-radius: 50px;
+	outline: 0;
+	background: #1f0b33;
+
+	&:focus {
+		box-shadow: inset 0 0 5px #8000ff;
+	}
+}
+
+.video-list {
+	.header {
+		font-size: 200%;
+		font-weight: 200;
+	}
+
+	.empty {
+		font-size: 80%;
+		font-style: italic;
+
+		opacity: .5;
+	}
+}
+
+.extractor-list, .video-list ul {
+	max-width: 400px;
+	margin: auto;
+
+	text-align: left;
+
+	&.extractor-list {
+		display: none;
+	}
+}
+
+.container {
+	width: 100%;
+	max-width: 600px;
+	margin: auto;
+
+	text-align: left;
+}
+.videoInfo {
+	width: 100%;
+	max-width: 600px;
+	margin: 10px auto;
+
+	.thumb {
+		float: left;
+
+		width: 200px;
+	}
+
+	.info {
+		float: right;
+
+		width: 100%;
+
+		textarea {
+			font-family: inherit;
+
+			overflow: auto;
+
+			color: inherit;
+			border: 0;
+			background: none;
+		}
+	}
+
+	.thumb + .info {
+		width: calc(100% - 200px);
+	}
+}
+
+.formats {
+	font-family: monospace;
+	font-size: 8px;
+
+	margin: auto;
+
+	th, td {
+		padding: 2px 4px;
+	}
+}
+
+.progress {
+	position: relative;
+
+	overflow: hidden;
+
+	width: 100%;
+	height: 2em;
+
+	border: solid 2px;
+	border-radius: 25px;
+
+	.indicator {
+		position: relative;
+
+		overflow: hidden;
+
+		height: 100%;
+
+		transition: 1s width;
+
+		background: currentColor;
+
+		.percent {
+			position: absolute;
+			top: 4px;
+			right: 0;
+			left: 0;
+
+			color: #0e021a;
+		}
+	}
+}

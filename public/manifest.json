@@ -1,0 +1,8 @@
+{
+	"short_name": "duncan's video downloader",
+	"name": "duncan's video downloader",
+	"start_url": ".",
+	"display": "standalone",
+	"theme_color": "#1F0B33",
+	"background_color": "#0E021A"
+}
