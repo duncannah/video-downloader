@@ -14,7 +14,7 @@ There are little to no checks in place, as this was designed to be only used by 
 
 ```bash
 # run server
-npm start
+NODE_ENV="production" npm start
 
 # debug
 DEBUG=video-downloader:* npm start
