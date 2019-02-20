@@ -140,7 +140,9 @@ router.get("/", (req, res) => {
 				req.body.url
 			],
 			YTDL_OPT
-		).catch(() => {
+		);
+
+		video.catch(() => {
 			videoList[uuid].status = "failed";
 		});
 
