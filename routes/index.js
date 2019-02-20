@@ -137,7 +137,7 @@ router.get("/", (req, res) => {
 				`${path.join(__dirname, "../videos/", uuid, "%(title)s.%(ext)s")}`,
 				"--newline",
 				"--postprocessor-args",
-				"'-strict -2'",
+				"-strict -2",
 				"--",
 				req.body.url
 			],
@@ -168,7 +168,9 @@ router.get("/", (req, res) => {
 			let dlMatch = data.toString().match(/^ *?\[download] +?(.+?)%/m);
 			if (dlMatch) videoList[uuid].progress = parseFloat(dlMatch[1]);
 
-			let ffMatch = data.toString().match(/^ *?\[ffmpeg] Destination: .*\/(.*?)$/m);
+			let ffMatch =
+				data.toString().match(/^ *?\[ffmpeg] Destination: .*\/(.*?)$/m) ||
+				data.toString().match(/^ *?\[ffmpeg] Merging formats into ".*\/(.*?)"$/m);
 			if (ffMatch) videoList[uuid].fileName = ffMatch[1].substr(ffMatch[1].indexOf("/") + 1);
 		});
 
