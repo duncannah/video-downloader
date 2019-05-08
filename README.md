@@ -14,10 +14,10 @@ There are little to no checks in place, as this was designed to be only used by 
 
 ```bash
 # run server
-NODE_ENV="production" npm start
+NODE_ENV="production" yqrn start
 
 # debug
-DEBUG=video-downloader:* npm start
+DEBUG=video-downloader:* yarn start
 
 # set `PORT` to set the port.
 ```
